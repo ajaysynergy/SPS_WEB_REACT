@@ -35,6 +35,40 @@ const pageTitle = (route) =>
   pageFiles[`../legacy-pages/${route}`]?.match(/<title>(.*?)<\/title>/i)?.[1] ||
   "Suraj Public School";
 
+const siteUrl = "https://surajpublicschool.netlify.app";
+const pageDescriptions = {
+  "index.html":
+    "Suraj Public School, Kotkasim, Rajasthan, is a CBSE affiliated senior secondary school at Chowki Road, Kotkasim - 301702. Explore academics, admissions, activities and school information.",
+  "about.html":
+    "Learn about Suraj Public School, a CBSE affiliated senior secondary school in Kotkasim, Rajasthan, and its values, vision and approach to learning.",
+  "admissions.html":
+    "Find admission information and make an enquiry with Suraj Public School, Kotkasim, Rajasthan.",
+  "contact.html":
+    "Contact Suraj Public School at Chowki Road, Kotkasim, Rajasthan - 301702. Call 99507 11477 or find the school on Google Maps.",
+  "principal.html":
+    "Read the Principal's message and educational vision of Suraj Public School, Kotkasim, Rajasthan.",
+};
+
+const updateMeta = (name, content, attribute = "name") => {
+  let element = document.head.querySelector(`meta[${attribute}="${name}"]`);
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attribute, name);
+    document.head.appendChild(element);
+  }
+  element.setAttribute("content", content);
+};
+
+const updateLink = (rel, href) => {
+  let element = document.head.querySelector(`link[rel="${rel}"]`);
+  if (!element) {
+    element = document.createElement("link");
+    element.setAttribute("rel", rel);
+    document.head.appendChild(element);
+  }
+  element.setAttribute("href", href);
+};
+
 function Header({ route, open, setOpen }) {
   const home = route === "index.html";
   return (
@@ -104,15 +138,9 @@ function Footer() {
             future-ready learners through education, discipline and character.
           </p>
           <div className="socials">
-            <a href="#" aria-label="Facebook">
-              f
-            </a>
-            <a href="#" aria-label="Instagram">
-              ig
-            </a>
-            <a href="#" aria-label="YouTube">
-              ▶
-            </a>
+            <span aria-label="Facebook">f</span>
+            <span aria-label="Instagram">ig</span>
+            <span aria-label="YouTube">▶</span>
           </div>
         </div>
         <div>
@@ -232,7 +260,24 @@ function FloatingActions() {
 
 function useInteractions(root, route, setRoute, setOpen) {
   useEffect(() => {
-    document.title = pageTitle(route);
+    const title =
+      route === "index.html"
+        ? "Suraj Public School Kotkasim, Rajasthan | CBSE School"
+        : pageTitle(route);
+    const pageUrl =
+      route === "index.html" ? `${siteUrl}/` : `${siteUrl}/${route}`;
+    const description =
+      pageDescriptions[route] ||
+      `Explore ${pageTitle(route)} and school information from Suraj Public School, Kotkasim, Rajasthan.`;
+    document.title = title;
+    updateMeta("description", description);
+    updateMeta("robots", "index, follow");
+    updateLink("canonical", pageUrl);
+    updateMeta("og:title", title, "property");
+    updateMeta("og:description", description, "property");
+    updateMeta("og:url", pageUrl, "property");
+    updateMeta("twitter:title", title);
+    updateMeta("twitter:description", description);
     window.scrollTo({ top: 0, behavior: "instant" });
     const rootElement = root.current;
     const navigate = (event) => {

@@ -1123,7 +1123,8 @@ button {
   gap: 8px;
   margin-top: 22px;
 }
-.socials a {
+.socials a,
+.socials span {
   width: 32px;
   height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.3);
