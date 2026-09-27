@@ -5,6 +5,26 @@ const pageFiles = import.meta.glob("../legacy-pages/*.html", {
   query: "?raw",
   import: "default",
 });
+const resultPhotos = {
+  10: Object.entries(
+    import.meta.glob("../assets/images/results/class-10/*.jpg", {
+      eager: true,
+      query: "?url",
+      import: "default",
+    }),
+  ).sort(([first], [second]) =>
+    first.localeCompare(second, undefined, { numeric: true }),
+  ),
+  12: Object.entries(
+    import.meta.glob("../assets/images/results/class-12/*.jpg", {
+      eager: true,
+      query: "?url",
+      import: "default",
+    }),
+  ).sort(([first], [second]) =>
+    first.localeCompare(second, undefined, { numeric: true }),
+  ),
+};
 
 const navItems = [
   ["index.html", "Home"],
@@ -26,10 +46,97 @@ const pageMarkup = (route) => {
   const source =
     pageFiles[`../legacy-pages/${route}`] ||
     pageFiles["../legacy-pages/404.html"];
-  return (
+  const main =
     source?.match(/<main[\s\S]*?<\/main>/i)?.[0] ||
-    '<main><section class="section"><div class="container"><h1>Page not found</h1></div></section></main>'
-  );
+    '<main><section class="section"><div class="container"><h1>Page not found</h1></div></section></main>';
+  if (route !== "results.html") return main;
+
+  const parsed = new DOMParser().parseFromString(main, "text/html");
+  parsed.querySelector(".results-stats")?.remove();
+  const intro = parsed.querySelector(".results-overview .section-heading p");
+  if (intro) {
+    intro.textContent =
+      "Student names, subject marks and percentages below are demo placeholders until verified school records are available.";
+  }
+  [12, 10].forEach((grade) => {
+    const heading = [
+      ...parsed.querySelectorAll(".results-section-heading h2"),
+    ].find((item) =>
+      item.textContent.includes(
+        grade === 12 ? "Class XII" : "Class X highlights",
+      ),
+    );
+    const section = heading?.closest(".container");
+    const grid = section?.querySelector(".results-grid");
+    if (!grid) return;
+    heading.textContent = `Class ${grade === 12 ? "XII" : "X"} students`;
+    const badge = section.querySelector(".results-badge");
+    if (badge)
+      badge.textContent = `${resultPhotos[grade].length} student photos`;
+    grid.innerHTML = resultPhotos[grade]
+      .map(([, image], index) => {
+        const profiles =
+          grade === 12
+            ? [
+                {
+                  focus: "Science · STEM",
+                  subjects: ["Physics", "Chemistry", "Mathematics"],
+                },
+                {
+                  focus: "Commerce · Business",
+                  subjects: ["Accountancy", "Economics", "Business Studies"],
+                },
+                {
+                  focus: "Humanities · Social Sciences",
+                  subjects: ["History", "Political Science", "English"],
+                },
+              ]
+            : [
+                {
+                  focus: "Mathematics Focus",
+                  subjects: ["Mathematics", "Science", "English"],
+                },
+                {
+                  focus: "Science Focus",
+                  subjects: ["Science", "Social Science", "Hindi"],
+                },
+                {
+                  focus: "Languages Focus",
+                  subjects: ["English", "Hindi", "Mathematics"],
+                },
+                {
+                  focus: "Social Studies Focus",
+                  subjects: ["Social Science", "English", "Science"],
+                },
+              ];
+        const profile = profiles[index % profiles.length];
+        const percentage = 78 + ((index * 11 + grade) % 21);
+        const marks = profile.subjects
+          .map(
+            (subject, subjectIndex) =>
+              `<span>${subject}<b>${60 + ((index * 13 + subjectIndex * 17 + grade * 3) % 40)}</b></span>`,
+          )
+          .join("");
+        return `
+          <article class="result-card reveal">
+            <div class="result-photo">
+              <img src="${image}" alt="Class ${grade} student ${index + 1}" loading="lazy" />
+            </div>
+            <div class="result-content">
+              <span class="result-rank">${profile.focus}</span>
+              <h3>Student ${index + 1}</h3>
+              <p>Class ${grade} · Demo record</p>
+              <div class="result-score">
+                <strong>${percentage}%</strong>
+                <span>Demo percentage</span>
+              </div>
+              <div class="marks">${marks}</div>
+            </div>
+          </article>`;
+      })
+      .join("");
+  });
+  return parsed.querySelector("main").innerHTML;
 };
 const pageTitle = (route) =>
   pageFiles[`../legacy-pages/${route}`]?.match(/<title>(.*?)<\/title>/i)?.[1] ||
